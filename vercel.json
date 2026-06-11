@@ -1,0 +1,41 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection string",
+      "required": true
+    },
+    "NEXTAUTH_URL": {
+      "description": "NextAuth callback URL",
+      "required": true
+    },
+    "NEXTAUTH_SECRET": {
+      "description": "NextAuth secret for session encryption",
+      "required": true
+    },
+    "GOOGLE_CLIENT_ID": {
+      "description": "Google OAuth client ID",
+      "required": false
+    },
+    "GOOGLE_CLIENT_SECRET": {
+      "description": "Google OAuth client secret",
+      "required": false
+    },
+    "EMAIL_SERVER": {
+      "description": "Email server URL for email provider",
+      "required": false
+    },
+    "EMAIL_FROM": {
+      "description": "Email from address",
+      "required": false
+    },
+    "SUPER_ADMIN_EMAIL": {
+      "description": "Super admin email address",
+      "required": true,
+      "value": "mokaledrshad@gmail.com"
+    }
+  }
+}

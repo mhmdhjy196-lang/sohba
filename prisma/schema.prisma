@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String?
+  email          String           @unique
+  emailVerified  DateTime?
+  image          String?
+  role           UserRole         @default(MEMBER)
+  roomsOwned     Room[]           @relation("ownerRooms")
+  memberships    RoomMember[]
+  messages       Message[]
+  reactions      Reaction[]
+  tasks          Task[]
+  quranProgress  QuranProgress[]
+  dhikrLogs      DhikrLog[]
+  studySessions  StudySession[]
+  achievements   Achievement[]
+  notifications  Notification[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+model Room {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  topic         String?
+  type          RoomType      @default(PUBLIC)
+  password      String?
+  owner         User          @relation("ownerRooms", fields: [ownerId], references: [id])
+  ownerId       String
+  members       RoomMember[]
+  messages      Message[]
+  quranProgress QuranProgress[]
+  tasks         Task[]
+  dhikrLogs     DhikrLog[]
+  studySessions StudySession[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum RoomType {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+  PASSWORD_PROTECTED
+}
+
+model RoomMember {
+  id        String      @id @default(cuid())
+  room      Room        @relation(fields: [roomId], references: [id])
+  roomId    String
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  role      RoomRole    @default(MEMBER)
+  joinedAt  DateTime    @default(now())
+  active    Boolean     @default(true)
+
+  @@unique([roomId, userId])
+}
+
+enum RoomRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  room        Room        @relation(fields: [roomId], references: [id])
+  roomId      String
+  sender      User        @relation(fields: [senderId], references: [id])
+  senderId    String
+  content     String?
+  mediaUrl    String?
+  type        MessageType @default(TEXT)
+  parentId    String?
+  parent      Message?    @relation("MessageReplies", fields: [parentId], references: [id])
+  replies     Message[]   @relation("MessageReplies")
+  pinned      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  reactions   Reaction[]
+}
+
+enum MessageType {
+  TEXT
+  VOICE
+}
+
+model Reaction {
+  id         String   @id @default(cuid())
+  message    Message  @relation(fields: [messageId], references: [id])
+  messageId  String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  emoji      String
+  createdAt  DateTime @default(now())
+
+  @@unique([messageId, userId, emoji], name: "messageId_userId_emoji")
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  user        User        @relation(fields: [userId], references: [id])
+  userId      String
+  room        Room?       @relation(fields: [roomId], references: [id])
+  roomId      String?
+  title       String
+  description String?
+  type        TaskType    @default(WORSHIP)
+  status      TaskStatus  @default(PENDING)
+  xp          Int         @default(0)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum TaskType {
+  WORSHIP
+  STUDY
+  GOOD_DEED
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  MISSED
+}
+
+model QuranProgress {
+  id           String    @id @default(cuid())
+  room         Room      @relation(fields: [roomId], references: [id])
+  roomId       String
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  page         Int       @default(1)
+  juz          Int       @default(1)
+  ayah         Int       @default(1)
+  bookmarked   Boolean   @default(false)
+  goalPages    Int       @default(0)
+  lastReadAt   DateTime? 
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model DhikrLog {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  room      Room?     @relation(fields: [roomId], references: [id])
+  roomId    String?
+  count     Int       @default(0)
+  target    Int       @default(100)
+  type      DhikrType @default(GENERAL)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum DhikrType {
+  GENERAL
+  MORNING
+  EVENING
+  QURAN
+}
+
+model StudySession {
+  id         String    @id @default(cuid())
+  room       Room?     @relation(fields: [roomId], references: [id])
+  roomId     String?
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String
+  duration   Int       @default(0)
+  focusScore Int       @default(0)
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Achievement {
+  id          String       @id @default(cuid())
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String
+  title       String
+  description String?
+  badge       String?
+  earnedAt    DateTime     @default(now())
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  user        User             @relation(fields: [userId], references: [id])
+  userId      String
+  type        NotificationType
+  title       String
+  description String?
+  read        Boolean          @default(false)
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+}
+
+enum NotificationType {
+  MENTION
+  ROOM_INVITE
+  TASK_REMINDER
+  SYSTEM
+}
